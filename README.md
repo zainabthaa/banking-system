@@ -6,8 +6,6 @@
 
 A desktop banking application written in Java and Swing. Customers can deposit, withdraw, transfer money and view their statement. Administrators can open accounts, reset PINs, unlock accounts, pay interest and run reports.
 
-It began as a university team project. I then rebuilt it from scratch as a portfolio piece, focusing on **clean architecture, security, correctness with money, and automated testing**. See [What I changed and why](#what-i-changed-and-why).
-
 <p align="center">
   <img src="docs/screenshots/customer-dashboard.png" width="49%" alt="Customer dashboard">
   <img src="docs/screenshots/admin-dashboard.png" width="49%" alt="Admin dashboard">
@@ -102,7 +100,7 @@ src/main/java/com/zainabtaha/banking/
 | **`BigDecimal` for money**, two decimal places, banker's rounding | `double` cannot store 0.10 exactly, so errors build up over many transactions. |
 | **Injected `Clock`** | Timestamps can be tested without depending on the real time. |
 | **Atomic file writes** (write to a temp file, then rename it) | A crash in the middle of saving never leaves a half-written accounts file. |
-| **Proper CSV quoting** | Names such as `Doe, Jane` no longer break the parser. |
+| **Proper CSV quoting** | Names containing commas or quotes, such as `Doe, Jane`, are stored and read back correctly. |
 | **`SwingWorker`** for slow operations | Password hashing deliberately takes a fraction of a second, and running it in the background keeps the window responsive. |
 | **One window with `CardLayout`** | Smoother than opening and closing a new `JFrame` for every screen. |
 
@@ -126,26 +124,6 @@ There are 62 JUnit 5 tests covering:
 
 GitHub Actions runs the build on **Linux, Windows and macOS** for every push.
 
-## What I changed and why
-
-The original version was a team course project, written in a single package with no build tool. Rebuilding it taught me more than writing it the first time did. These are the main problems I found and how I fixed them:
-
-| Original | Problem | Now |
-|---|---|---|
-| PINs stored as plain text in `users.txt`, which was committed to git | Anyone with the file has every PIN | Salted PBKDF2 hashes. The data folder is git-ignored. |
-| Admin PIN hard-coded in the source | Anyone who reads the code can log in as admin | The admin chooses a password on first launch, and it is stored hashed |
-| Code wrote to `Transactions.txt` while the file was named `transactions.txt` | Only worked because macOS ignores letter case; broken on Linux | One clearly named data folder, plus CI on 3 operating systems |
-| `CheckingAccount` overdraft called the parent's `withdraw`, which rejected any amount above the balance | The overdraft could never be used | Template method using `availableFunds()`, with tests |
-| `CheckingAccount` took the account number as an `int` | 10-digit numbers overflow an `int` | Account numbers are validated strings |
-| `double` used for balances | Floating-point rounding errors | `BigDecimal` |
-| Transaction IDs from `UUID.hashCode()` stored as a `double` | IDs like `-1.277876826E9` that can collide | Full UUID strings, plus a timestamp and the balance after each transaction |
-| "Create user" ignored the balance field and did not check for duplicate account numbers | Duplicate accounts and lost opening deposits | Duplicate check and an opening-deposit transaction |
-| Lockout counter only lived inside one dialog loop | Restarting the app reset the counter | Counter stored on the account and saved to disk |
-| The same "split on `", "` then `":"`" parsing copied into many classes | Hard to maintain, and broke on names containing commas | One CSV class used by the repositories |
-| One 600-line class mixing the user interface, file I/O and logic | Hard to read and impossible to unit test | Separate layers: UI → service → repository |
-| `ATM`, `User` and `TestSwing` existed but were never used | Dead code | Removed, and their features (transfers, interest) are now wired into the app |
-| No build tool, no tests, `.class` files committed | Could not be built or checked automatically | Maven, 62 tests, CI, and a `.gitignore` |
-
 ## Possible next steps
 
 - Swap the CSV repositories for SQLite/JDBC with real database transactions. The service layer would not change.
@@ -155,4 +133,4 @@ The original version was a team course project, written in a single package with
 
 ## Credits
 
-The original version was a team project by **Zainab Taha** and **Leen Dalloul** ([original repository](https://github.com/leendalloul/Project-)). This repository is my redesign and rewrite of that project.
+Originally developed as a team project by **Zainab Taha** and **Leen Dalloul** ([original repository](https://github.com/leendalloul/Project-)).
