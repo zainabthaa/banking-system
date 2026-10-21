@@ -1,0 +1,12 @@
+# Build output
+target/
+*.class
+
+# Runtime data (created on first launch; contains hashed PINs and balances)
+data/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
